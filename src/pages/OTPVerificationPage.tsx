@@ -20,7 +20,7 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
   const emailFromState = location.state?.email || propEmail;
   const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [resendCooldown, setResendCooldown] = useState<number>(0);
+  const [resendOtpPassword, setResendOtpPassword] = useState<number>(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
   const navigate = useNavigate();
   const [verifyEmail] = useVerifyEmailMutation();
@@ -32,14 +32,14 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
 
   // Resend cooldown timer
   useEffect(() => {
-    if (resendCooldown > 0) {
+    if (resendOtpPassword > 0) {
       const timer = setTimeout(
-        () => setResendCooldown(resendCooldown - 1),
+        () => setResendOtpPassword(resendOtpPassword - 1),
         1000
       );
       return () => clearTimeout(timer);
     }
-  }, [resendCooldown]);
+  }, [resendOtpPassword]);
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -123,6 +123,7 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
       return;
     }
 
+// Verify OTP API call
     try {
       setIsVerifying(true);
       const res = await verifyEmail({
@@ -153,7 +154,7 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
   };
 
   const handleResendOTP = async () => {
-    if (resendCooldown > 0) return;
+    if (resendOtpPassword > 0) return;
 
     try {
       // Simulate API call to resend OTP
@@ -163,8 +164,8 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
         description: `New verification code sent to ${emailFromState}`,
       });
 
-      // Start cooldown
-      setResendCooldown(30);
+     
+      setResendOtpPassword(30);
 
       // Clear current OTP
       setOtp(new Array(6).fill(""));
@@ -245,11 +246,11 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
                 Didn't receive the code?{" "}
                 <button
                   onClick={handleResendOTP}
-                  disabled={resendCooldown > 0}
+                  disabled={resendOtpPassword > 0}
                   className="text-blue-600 hover:text-blue-700 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
-                  {resendCooldown > 0
-                    ? `Resend in ${resendCooldown}s`
+                  {resendOtpPassword > 0
+                    ? `Resend in ${resendOtpPassword}s`
                     : "Resend OTP"}
                 </button>
               </p>
