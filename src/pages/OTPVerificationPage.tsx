@@ -1,9 +1,10 @@
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import signinImage from "@/assets/signin.png";
+import { useVerifyEmailMutation } from "@/redux/api/api";
 
 interface OTPVerificationPageProps {
   email?: string;
@@ -12,14 +13,17 @@ interface OTPVerificationPageProps {
 }
 
 const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
-  email = "",
+  email: propEmail = "",
   onVerificationSuccess,
 }) => {
+  const location = useLocation();
+  const emailFromState = location.state?.email || propEmail;
   const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [resendCooldown, setResendCooldown] = useState<number>(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
   const navigate = useNavigate();
+  const [verifyEmail] = useVerifyEmailMutation();
 
   // Initialize refs on mount
   useEffect(() => {
@@ -121,36 +125,28 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
 
     try {
       setIsVerifying(true);
-      console.log("OTP Verified:", otpString);
-      // Simulate API call for OTP verification
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await verifyEmail({
+        email: emailFromState,
+        oneTimeCode: Number(otpString),
+      }).unwrap();
 
-      // Simulate OTP validation (replace with actual API call)
-      if (otpString === "123456") {
-        // Mock valid OTP
-        toast.success("OTP Verified Successfully", {
-          description: "You can now reset your password.",
-        });
-
-        if (onVerificationSuccess) {
-          onVerificationSuccess(email);
-        } else {
-          // Navigate to reset password page
-          navigate("/reset-password", { state: { email } });
-        }
-      } else {
-        toast.error("Invalid OTP", {
-          description: "Please check the code and try again.",
-        });
-        // Clear OTP inputs
-        setOtp(new Array(6).fill(""));
-        inputRefs.current[0]?.focus();
-      }
-    } catch (error: unknown) {
-      console.error("Verification error:", error);
-      toast.error("Verification failed", {
-        description: "Please try again later.",
+      toast.success(res?.message || "OTP Verified Successfully", {
+        description: "You can now reset your password.",
       });
+
+      if (onVerificationSuccess) {
+        onVerificationSuccess(emailFromState);
+      } else {
+        navigate("/reset-password", { state: { email: emailFromState } });
+      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error("Verification error:", error);
+      toast.error(error?.data?.message || "Invalid OTP", {
+        description: "Please check the code and try again.",
+      });
+      setOtp(new Array(6).fill(""));
+      inputRefs.current[0]?.focus();
     } finally {
       setIsVerifying(false);
     }
@@ -164,7 +160,7 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast.success("OTP Resent", {
-        description: `New verification code sent to ${email}`,
+        description: `New verification code sent to ${emailFromState}`,
       });
 
       // Start cooldown
@@ -210,8 +206,8 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
           </div>
 
           <p className="text-gray-600 mb-6">
-            Please enter the OTP we have sent you in your email.
-            <span className="font-medium">{email}</span>
+            Please enter the OTP we have sent you in your email {" "}
+            <span className="font-medium">{emailFromState}</span>
           </p>
 
           <div className="space-y-6">

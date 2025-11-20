@@ -5,6 +5,8 @@ export const baseApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: 'http://10.10.12.25:5008/api/v1'}),
   tagTypes: ['inventory'],
   endpoints: (builder) => ({
+
+    //user registration API
     getUserRegister: builder.query({
       query: (featured) => {
         const params = new URLSearchParams();
@@ -20,7 +22,8 @@ export const baseApi = createApi({
       providesTags: ['inventory']
     }),
 
-
+  ///----------------- Password Related APIs -----------------///
+    //user login API
     userLogin: builder.mutation({
       query: (newUserLogin) => ({
         url: '/auth/login',
@@ -30,6 +33,7 @@ export const baseApi = createApi({
       invalidatesTags: ['inventory'],
     }),  
 
+    //forgot password API
     forgotPassword: builder.mutation({
       query: (userForgotPassword) => ({
         url: '/auth/forgot-password',
@@ -38,14 +42,27 @@ export const baseApi = createApi({
       }),
       invalidatesTags: ['inventory'],
     }),  
+
+    //change password API
+      changePassword: builder.mutation({
+      query: (userChangePassword) => ({
+        url: '/auth/change-password',
+        method: 'POST',
+        body: userChangePassword,
+      }),
+      invalidatesTags: ['inventory'],
+    }), 
+    //reset password API
     resetPassword: builder.mutation({
       query: (userResetPassword) => ({
         url: '/auth/reset-password',
-        method: 'POST',
+        method: 'PATCH',
         body: userResetPassword,
       }),
       invalidatesTags: ['inventory'],
     }),  
+
+    //verify email API
     verifyEmail: builder.mutation({
       query: (userVerifyEmail) => ({
         url: '/auth/verify-email',
@@ -54,6 +71,10 @@ export const baseApi = createApi({
       }),
       invalidatesTags: ['inventory'],
     }),  
+
+
+    ///----------------- Inventory Related APIs -----------------///
+
 
     // getSingleInventory: builder.query({
     //   query: (id) => ({
@@ -89,6 +110,7 @@ export const {
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useVerifyEmailMutation,
+  useChangePasswordMutation
 //   useGetSingleInventoryQuery,
 //   useUpdatedInventoryMutation,
 //   useDeleteInventoryMutation,

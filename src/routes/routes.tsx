@@ -104,6 +104,10 @@ const router = createBrowserRouter([
     path: "reset-password",
     element: <ResetPasswordPage />,
   },
+   {
+    path: "change-password",
+    element: <ChangePasswordPage />,
+  },
 ]);
 
 export default router;
