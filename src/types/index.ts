@@ -92,3 +92,17 @@ export interface StatCardProps {
   subtitle?: string;
   className?: string;
 }
+
+export interface Category {
+  _id: string;
+  id?: string;
+  name: string;
+  image: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CategoryFormData {
+  name: string;
+  image: File | null;
+}

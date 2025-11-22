@@ -140,6 +140,51 @@ export const baseApi = createApi({
     }),
 
 
+    ///----------------- Category Related APIs -----------------///
+    //get all categories API
+    getAllCategories: builder.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.append('page', params.page.toString());
+        if (params?.limit) searchParams.append('limit', params.limit.toString());
+        return {
+          url: `/category/get-all?${searchParams.toString()}`,
+          method: 'GET',
+        };
+      },
+      providesTags: ['inventory'],
+    }),
+
+    //get category details API
+    getCategoryDetails: builder.query({
+      query: (id) => ({
+        url: `/category/get-details/${id}`,
+        method: 'GET',
+      }),
+      providesTags: ['inventory'],
+    }),
+
+    //create category API
+    createCategory: builder.mutation({
+      query: (data) => ({
+        url: '/category/create',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['inventory'],
+    }),
+
+    //update category API
+    updateCategory: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `/category/update/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['inventory'],
+    }),
+
+
     ///----------------- Order Related APIs -----------------///
     //get all orders API
     getAllOrders: builder.query({
@@ -199,6 +244,10 @@ export const {
   useDeleteProductMutation,
   useUpdateProductMutation,
   useGetAdminNotificationsQuery,
+  useGetAllCategoriesQuery,
+  useGetCategoryDetailsQuery,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
   useGetAllOrdersQuery,
 //   useGetSingleInventoryQuery,
 //   useUpdatedInventoryMutation,
