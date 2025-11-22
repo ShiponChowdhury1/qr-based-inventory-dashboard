@@ -140,6 +140,22 @@ export const baseApi = createApi({
     }),
 
 
+    ///----------------- Order Related APIs -----------------///
+    //get all orders API
+    getAllOrders: builder.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.append('page', params.page.toString());
+        if (params?.limit) searchParams.append('limit', params.limit.toString());
+        return {
+          url: `/order/get-all-order?${searchParams.toString()}`,
+          method: 'GET',
+        };
+      },
+      providesTags: ['inventory'],
+    }),
+
+
     ///----------------- Inventory Related APIs -----------------///
 
 
@@ -183,6 +199,7 @@ export const {
   useDeleteProductMutation,
   useUpdateProductMutation,
   useGetAdminNotificationsQuery,
+  useGetAllOrdersQuery,
 //   useGetSingleInventoryQuery,
 //   useUpdatedInventoryMutation,
 //   useDeleteInventoryMutation,

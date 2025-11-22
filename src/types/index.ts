@@ -66,3 +66,20 @@ export interface PaginationProps {
   showPageNumbers?: boolean;
   maxVisiblePages?: number;
 }
+
+export interface OrderItem {
+  productId: string | null;
+  quantity: number;
+  price: number;
+}
+
+export interface Order {
+  _id: string;
+  id?: string;
+  user: string | null;
+  items: OrderItem[];
+  totalAmount: number;
+  status: "delivered" | "canceled" | "pending" | "processing";
+  createdAt: string;
+  updatedAt: string;
+}
