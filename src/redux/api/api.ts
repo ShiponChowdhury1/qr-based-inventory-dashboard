@@ -1,8 +1,19 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import type { RootState } from '../store';
 
 export const baseApi = createApi({
   reducerPath: 'baseApi',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://10.10.12.25:5008/api/v1'}),
+  baseQuery: fetchBaseQuery({ 
+    baseUrl: 'http://10.10.12.25:5008/api/v1',
+    prepareHeaders: (headers, { getState }) => {
+      const token = (getState() as RootState).auth.token;
+      console.log('Token from Redux:', token);
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),
   tagTypes: ['inventory'],
   endpoints: (builder) => ({
 
@@ -73,6 +84,41 @@ export const baseApi = createApi({
     }),  
 
 
+    ///----------------- Product Related APIs -----------------///
+    //get all products API
+    getAllProducts: builder.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.category) searchParams.append('category', params.category);
+        if (params?.page) searchParams.append('page', params.page.toString());
+        if (params?.limit) searchParams.append('limit', params.limit.toString());
+        return {
+          url: `/product/get-all-products?${searchParams.toString()}`,
+          method: 'GET',
+        };
+      },
+      providesTags: ['inventory'],
+    }),
+
+    //get single product API
+    getSingleProduct: builder.query({
+      query: (id) => ({
+        url: `/product/get-details/${id}`,
+        method: 'GET',
+      }),
+      providesTags: ['inventory'],
+    }),
+
+    //delete product API
+    deleteProduct: builder.mutation({
+      query: (id) => ({
+        url: `/product/delete/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['inventory'],
+    }),
+
+
     ///----------------- Inventory Related APIs -----------------///
 
 
@@ -110,7 +156,10 @@ export const {
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useVerifyEmailMutation,
-  useChangePasswordMutation
+  useChangePasswordMutation,
+  useGetAllProductsQuery,
+  useGetSingleProductQuery,
+  useDeleteProductMutation,
 //   useGetSingleInventoryQuery,
 //   useUpdatedInventoryMutation,
 //   useDeleteInventoryMutation,

@@ -55,12 +55,17 @@ export default function SignInPage() {
         email: data.email,
         password: data.password,
       }).unwrap();
-  console.log(res)
+      
+      console.log("Login response:", res);
+      
+      // Extract token - check if it's accessToken or token
+      const token = res.data?.accessToken || res.data?.token;
+      
       // Save user & token in Redux
       dispatch(
         setUser({
           user: res.data.user,
-          token: res.data.token,
+          token: token,
         })
       );
 
