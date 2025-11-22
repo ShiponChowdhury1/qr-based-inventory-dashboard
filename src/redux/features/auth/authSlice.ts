@@ -3,9 +3,12 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 
 interface AuthUser {
   id?: string;
+  _id?: string;
   name?: string;
   email?: string;
   role?: string;
+  image?: string;
+  verified?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }

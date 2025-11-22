@@ -1,27 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Checkbox } from "../ui/checkbox";
 import { Button } from "../ui/button";
-import { ArrowUpRight, Trash2, Loader2 } from "lucide-react";
+import { ArrowUpRight, Trash2, Loader2, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { Pagination } from "../pagination/Pagination";
 import { DetailsModal } from "../modals/DetailsModal";
-import { useGetAllProductsQuery, useDeleteProductMutation } from "@/redux/api/api";
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  size: number;
-  date: string;
-  time: string;
-  image: string;
-}
-
-interface ProductTableProps {
-  selectedCategory: string;
-  onCategoryChange: (category: string) => void;
-}
+import { AddProductModal } from "../modals/AddProductModal";
+import { useGetAllProductsQuery, useDeleteProductMutation, useUpdateProductMutation } from "@/redux/api/api";
+import type { Product, ProductTableProps } from "@/types";
 
 export function ProductTable({
   selectedCategory,
@@ -31,6 +17,9 @@ export function ProductTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const checkboxRef = useRef<HTMLInputElement>(null);
 
   const itemsPerPage = 8;
 
@@ -42,10 +31,11 @@ export function ProductTable({
   });
 
   const [deleteProduct, { isLoading: deleting }] = useDeleteProductMutation();
+  const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
 
   // Debug: Log the API response
-  console.log('Products API Response:', productsData);
-  console.log('Full Response Structure:', JSON.stringify(productsData, null, 2));
+  // console.log('Products API Response:', productsData);
+  // console.log('Full Response Structure:', JSON.stringify(productsData, null, 2));
 
   // Extract data from API response - backend returns { success, message, data: {...} }
   let products = [];
@@ -53,24 +43,34 @@ export function ProductTable({
   if (productsData?.data) {
     const dataObj = productsData.data;
     // Check different possible locations for the products array
+    let rawProducts = [];
     if (Array.isArray(dataObj.data)) {
-      products = dataObj.data;
+      rawProducts = dataObj.data;
     } else if (Array.isArray(dataObj.products)) {
-      products = dataObj.products;
+      rawProducts = dataObj.products;
     } else if (Array.isArray(dataObj.result)) {
-      products = dataObj.result;
+      rawProducts = dataObj.result;
     } else {
       console.error('Products array not found in:', dataObj);
-      products = [];
+      rawProducts = [];
     }
+    
+    // Map _id to id for frontend compatibility
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    products = rawProducts.map((product: any) => ({
+      ...product,
+      id: product._id || product.id,
+    }));
   }
 
   const totalPages = productsData?.data?.meta?.totalPages || productsData?.data?.pagination?.totalPages || 1;
   
   // Calculate categories from products if not provided by API
   const categories = productsData?.data?.categories || products.reduce((acc: Record<string, number>, product: Product) => {
-    const category = product.category || 'Uncategorized';
-    acc[category] = (acc[category] || 0) + 1;
+    const categoryName = typeof product.category === 'object' && product.category !== null 
+      ? product.category.name 
+      : (product.category || 'Uncategorized');
+    acc[categoryName] = (acc[categoryName] || 0) + 1;
     return acc;
   }, {});
 
@@ -129,6 +129,49 @@ export function ProductTable({
     }
   };
 
+  const handleEdit = (product: Product) => {
+    setProductToEdit(product);
+    setIsEditModalOpen(true);
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleUpdateProduct = async (productData: any, productId?: string) => {
+    if (!productId) return;
+    
+    try {
+      // Get the original product to extract category ID
+      const originalProduct = products.find((p: Product) => p.id === productId);
+      
+      // Convert to FormData for file upload
+      const formData = new FormData();
+      formData.append('name', productData.name);
+      
+      // Send category ID if it exists, otherwise send the category name
+      if (originalProduct && typeof originalProduct.category === 'object' && originalProduct.category !== null) {
+        formData.append('category', originalProduct.category._id);
+      } else {
+        formData.append('category', productData.category);
+      }
+      
+      formData.append('description', productData.description || '');
+      formData.append('price', productData.price.toString());
+      
+      // Only append image if a new file was selected
+      if (productData.image && productData.image instanceof File) {
+        formData.append('image', productData.image);
+      }
+      
+      await updateProduct({ id: productId, data: formData }).unwrap();
+      toast.success("Product updated successfully");
+      setProductToEdit(null);
+      setIsEditModalOpen(false);
+      refetch();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to update product");
+    }
+  };
+
   const handleActionClick = (product: Product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
@@ -143,6 +186,13 @@ export function ProductTable({
     products.length > 0 && selectedProducts.length === products.length;
   const isIndeterminate =
     selectedProducts.length > 0 && selectedProducts.length < products.length;
+
+  // Set indeterminate state on checkbox
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = isIndeterminate;
+    }
+  }, [isIndeterminate]);
 
   // Category tabs data
   const categoryTabs = [
@@ -217,8 +267,6 @@ export function ProductTable({
                 <th className="w-12 p-4">
                   <Checkbox
                     checked={isAllSelected}
-                    // @ts-expect-error - indeterminate is a valid prop but not in type definition
-                    ref={(el: HTMLButtonElement | null) => el && (el.indeterminate = isIndeterminate)}
                     onCheckedChange={handleSelectAll}
                   />
                 </th>
@@ -280,13 +328,17 @@ export function ProductTable({
                       </div>
                     </td>
                     <td className="p-4 text-gray-900">
-                      ${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price || 0).toFixed(2)}
+                      ${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(String(product.price || '0')).toFixed(2)}
                     </td>
                     <td className="p-4 text-gray-900">{product.size}</td>
                     <td className="p-4 text-gray-500">
                       <div>
-                        <p>{product.date}</p>
-                        <p className="text-sm">at {product.time}</p>
+                        <p>
+                          {product.date || (product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : "N/A")}
+                        </p>
+                        <p className="text-sm">
+                          at {product.time || (product.createdAt ? new Date(product.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : "N/A")}
+                        </p>
                       </div>
                     </td>
                     <td className="p-4">
@@ -298,6 +350,16 @@ export function ProductTable({
                           title="View details"
                         >
                           <ArrowUpRight className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(product)}
+                          disabled={updating}
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                          title="Edit product"
+                        >
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -334,6 +396,25 @@ export function ProductTable({
         type="product"
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Edit Product Modal */}
+      <AddProductModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onSave={handleUpdateProduct}
+        editMode={true}
+        isLoading={updating}
+        initialData={productToEdit ? {
+          id: productToEdit.id,
+          category: typeof productToEdit.category === 'object' && productToEdit.category !== null 
+            ? productToEdit.category.name 
+            : productToEdit.category,
+          name: productToEdit.name,
+          description: "",
+          price: productToEdit.price,
+          image: productToEdit.image,
+        } : undefined}
       />
     </div>
   );

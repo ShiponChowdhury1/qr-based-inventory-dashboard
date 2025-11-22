@@ -118,6 +118,27 @@ export const baseApi = createApi({
       invalidatesTags: ['inventory'],
     }),
 
+    //update product API
+    updateProduct: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `/product/update/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['inventory'],
+    }),
+
+
+    ///----------------- Notification Related APIs -----------------///
+    //get admin notifications API
+    getAdminNotifications: builder.query({
+      query: () => ({
+        url: '/notification/admin',
+        method: 'GET',
+      }),
+      providesTags: ['inventory'],
+    }),
+
 
     ///----------------- Inventory Related APIs -----------------///
 
@@ -160,6 +181,8 @@ export const {
   useGetAllProductsQuery,
   useGetSingleProductQuery,
   useDeleteProductMutation,
+  useUpdateProductMutation,
+  useGetAdminNotificationsQuery,
 //   useGetSingleInventoryQuery,
 //   useUpdatedInventoryMutation,
 //   useDeleteInventoryMutation,
