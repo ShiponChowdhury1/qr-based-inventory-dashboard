@@ -15,6 +15,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
+import { useDispatch } from "react-redux";
+import { updateUser } from "@/redux/features/auth/authSlice";
 
 const baseUrl = "http://10.10.12.25:5008";
 
@@ -28,6 +30,7 @@ type FormData = z.infer<typeof formSchema>;
 
 const EditPersonalInformationPage: React.FC = () => {
   const navigate = useNavigate(); // Use navigate for routing in React
+  const dispatch = useDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -67,11 +70,16 @@ const EditPersonalInformationPage: React.FC = () => {
       console.log("User profile response:", result);
 
       if (response.ok && result.success && result.data) {
+        const imageUrl = result.data.image || result.data.profileImage || "";
+        const fullImageUrl = imageUrl && !imageUrl.startsWith('http') 
+          ? `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}` 
+          : imageUrl;
+        
         const data = {
           name: result.data.name || "",
           email: result.data.email || "",
           phone: result.data.phone || "",
-          profileImage: result.data.image || result.data.profileImage || "",
+          profileImage: fullImageUrl,
         };
         setUserData(data);
         form.reset({
@@ -138,6 +146,22 @@ const EditPersonalInformationPage: React.FC = () => {
       console.log("Update response:", result);
 
       if (response.ok && result.success) {
+        // Update Redux state with new user data
+        const updatedData: Record<string, string> = {
+          name: data.name,
+          phone: data.phone,
+        };
+        
+        if (result.data?.image) {
+          const imageUrl = result.data.image;
+          const fullImageUrl = imageUrl && !imageUrl.startsWith('http') 
+            ? `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}` 
+            : imageUrl;
+          updatedData.image = fullImageUrl;
+        }
+        
+        dispatch(updateUser(updatedData));
+        
         toast.success("Profile updated successfully!");
         navigate("/settings/personal-information");
       } else {
@@ -182,9 +206,10 @@ const EditPersonalInformationPage: React.FC = () => {
                         <AvatarImage
                           src={userData.profileImage || "/placeholder.svg"}
                           alt={userData.name}
+                          className="object-cover"
                         />
                         <AvatarFallback className="text-lg">
-                          {userData.name.charAt(0).toUpperCase()}
+                          {userData.name ? userData.name.charAt(0).toUpperCase() : "U"}
                         </AvatarFallback>
                       </Avatar>
                       <button

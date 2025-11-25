@@ -12,6 +12,12 @@ const Header: React.FC = () => {
   const { data: notificationsData } = useGetAdminNotificationsQuery({});
   const { user } = useSelector((state: RootState) => state.auth);
   
+  // Construct full image URL
+  const baseUrl = "http://10.10.12.25:5008";
+  const userImage = user?.image 
+    ? (user.image.startsWith('http') ? user.image : `${baseUrl}${user.image.startsWith('/') ? '' : '/'}${user.image}`)
+    : "https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg";
+  
   // Extract notification count from API response
   // Backend returns: { success, message, data: { result: [], meta: { unread, total } } }
   let notificationCount = 0;
@@ -48,7 +54,11 @@ const Header: React.FC = () => {
         <Link to="/settings/personal-information">
           <div className="flex items-center gap-3 border-l-2 border-border pl-4">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.image || "https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?_gl=1*1l50xkh*_ga*MTIwNTg3NzA4OS4xNzYzNzg2MDg4*_ga_8JE65Q40S6*czE3NjM3OTI0MDEkbzIkZzEkdDE3NjM3OTI0MjgkajMzJGwwJGgw"} />
+              <AvatarImage 
+                src={userImage} 
+                alt={user?.name || "User"}
+                className="object-cover"
+              />
               <AvatarFallback>
                 {user?.name ? user.name.substring(0, 2).toUpperCase() : "AD"}
               </AvatarFallback>

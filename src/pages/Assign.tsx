@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,22 +8,10 @@ import { toast } from "sonner";
 import { Pagination } from "@/components/pagination/Pagination";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useGetAllUsersQuery } from "@/redux/api/api";
-import type { User } from "@/types";
+import type { User, AssignedCustomer } from "@/types";
 
 const baseUrl = "http://10.10.12.25:5008";
-
-interface AssignedCustomer {
-  id: string;
-  _id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  purchases?: number;
-  address?: string;
-  productId: string;
-}
 
 const Assign = () => {
   const [searchParams] = useSearchParams();
@@ -61,47 +50,85 @@ const Assign = () => {
     if (productId) {
       setIsModalOpen(true);
       setShowDropdown(false);
-      // Load assigned customers from localStorage
-      loadAssignedCustomers();
+      // Fetch assigned customers from API
+      fetchAssignedCustomers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
-  // Load assigned customers from localStorage
-  const loadAssignedCustomers = () => {
+  // Fetch all assigned customers from API
+  const fetchAssignedCustomers = async () => {
     if (!productId) return;
     
+    setLoadingAssignments(true);
     try {
-      const storageKey = `assigned_customers_${productId}`;
-      const stored = localStorage.getItem(storageKey);
-      
-      if (stored) {
-        const customers = JSON.parse(stored);
-        console.log("Loaded from localStorage:", customers);
-        setAssignedCustomers(customers);
+      const response = await fetch(
+        `${baseUrl}/api/v1/assign-product/get-all-assign-product?page=1&limit=100`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+      console.log("All assigned products API response:", result);
+      console.log("assignProduct array:", result.data?.assignProduct);
+      console.log("assignProduct length:", result.data?.assignProduct?.length);
+
+      if (response.ok && result.success && result.data?.assignProduct) {
+        if (Array.isArray(result.data.assignProduct)) {
+          console.log("All assignments before filter:", result.data.assignProduct);
+          
+          // Filter assignments for current productId
+          const productAssignments = result.data.assignProduct.filter(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (item: any) => {
+              console.log("Checking item:", item);
+              console.log("Item productId:", item.productId || item.product?._id);
+              console.log("Current productId:", productId);
+              return item.productId === productId || item.product?._id === productId;
+            }
+          );
+          
+          console.log("Filtered assignments for product:", productAssignments);
+          
+          if (productAssignments.length > 0) {
+            // Map the assigned products to customer format
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const mappedCustomers = productAssignments.map((item: any) => ({
+              id: item.user?._id || item.userId,
+              _id: item.user?._id || item.userId,
+              name: item.user?.name || "Unknown",
+              email: item.user?.email || "N/A",
+              phone: item.user?.phone || "N/A",
+              image: item.user?.image,
+              purchases: 0,
+              address: "N/A",
+              productId: productId,
+            }));
+            
+            console.log("Mapped assigned customers:", mappedCustomers);
+            setAssignedCustomers(mappedCustomers);
+          } else {
+            console.log("No assigned customers found for this product");
+            setAssignedCustomers([]);
+          }
+        } else {
+          console.log("assignProduct is not an array");
+          setAssignedCustomers([]);
+        }
       } else {
-        console.log("No stored customers found for this product");
+        console.log("API response not successful or no data");
         setAssignedCustomers([]);
       }
     } catch (error) {
-      console.error("Error loading assigned customers:", error);
+      console.error("Error fetching assigned customers:", error);
       setAssignedCustomers([]);
+    } finally {
+      setLoadingAssignments(false);
     }
   };
-
-  // Save assigned customers to localStorage whenever they change
-  useEffect(() => {
-    if (productId && assignedCustomers.length > 0) {
-      const storageKey = `assigned_customers_${productId}`;
-      localStorage.setItem(storageKey, JSON.stringify(assignedCustomers));
-      console.log("Saved to localStorage:", assignedCustomers);
-    }
-  }, [assignedCustomers, productId]);
-
-  // Debug: Log when assignedCustomers changes
-  useEffect(() => {
-    console.log("assignedCustomers state changed:", assignedCustomers);
-    console.log("Number of assigned customers:", assignedCustomers.length);
-  }, [assignedCustomers]);
 
   const handleUserSelect = (user: User) => {
     setSelectedUser(user);
@@ -142,52 +169,29 @@ const Assign = () => {
 
       const result = await response.json();
 
-      console.log("API Response:", result);
+      console.log("API Response Full:", result);
       console.log("Response status:", response.status);
       console.log("Response OK:", response.ok);
+      console.log("Error message:", result.message);
+      console.log("Error messages array:", result.errorMessages);
 
       if (response.ok && result.success) {
-        // Add to assigned customers list
-        const newAssignment: AssignedCustomer = {
-          ...selectedUser,
-          id: selectedUser._id,
-          productId: productId,
-          purchases: 0,
-          address: "N/A",
-        };
-        
-        setAssignedCustomers((prev) => [...prev, newAssignment]);
         toast.success(result.message || "Product assigned successfully!");
         
-        setIsModalOpen(false);
+        // Refetch assignments from API to get updated data
+        await fetchAssignedCustomers();
+        
+        // Reset modal
         setSelectedUser(null);
         setUserSearch("");
-        setShowDropdown(false);
-      } else if (result.message === "Product already assigned") {
-        // Product already assigned - add to list if not there
-        const alreadyInList = assignedCustomers.some(
-          (customer) => customer._id === selectedUser._id
-        );
+      } else if (response.status === 400 && result.message === "Product already assigned") {
+        toast.error("This product is already assigned to this user");
         
-        if (!alreadyInList) {
-          const existingAssignment: AssignedCustomer = {
-            ...selectedUser,
-            id: selectedUser._id,
-            productId: productId,
-            purchases: 0,
-            address: "N/A",
-          };
-          
-          setAssignedCustomers((prev) => [...prev, existingAssignment]);
-          toast.warning("This product was already assigned (added to list)");
-        } else {
-          toast.warning("This product is already assigned to this user");
-        }
+        // Refetch to ensure we have the latest data
+        await fetchAssignedCustomers();
         
-        setIsModalOpen(false);
         setSelectedUser(null);
         setUserSearch("");
-        setShowDropdown(false);
       } else {
         console.error("API Error:", result);
         toast.error(result.message || "Failed to assign product");
@@ -293,12 +297,6 @@ const Assign = () => {
                   <Checkbox
                     checked={isAllSelected}
                     onCheckedChange={handleSelectAll}
-                    ref={(el) => {
-                      if (el) {
-                        const input = el.querySelector("input");
-                        if (input) input.indeterminate = isIndeterminate;
-                      }
-                    }}
                   />
                 </th>
                 <th className="text-left p-4 font-medium text-gray-900">
@@ -319,7 +317,14 @@ const Assign = () => {
               </tr>
             </thead>
             <tbody key={assignedCustomers.length}>
-              {assignedCustomers.length === 0 ? (
+              {loadingAssignments ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-500" />
+                    <p className="text-gray-500 mt-2">Loading assignments...</p>
+                  </td>
+                </tr>
+              ) : assignedCustomers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-gray-500">
                     No assigned customers yet

@@ -119,3 +119,14 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface AssignedCustomer {
+  id: string;
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  purchases?: number;
+  address?: string;
+  productId: string;
+}

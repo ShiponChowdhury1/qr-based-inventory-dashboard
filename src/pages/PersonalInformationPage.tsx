@@ -36,11 +36,16 @@ export default function PersonalInformationPage() {
       console.log("User profile response:", result);
 
       if (response.ok && result.success && result.data) {
+        const imageUrl = result.data.image || result.data.profileImage || "";
+        const fullImageUrl = imageUrl && !imageUrl.startsWith('http') 
+          ? `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}` 
+          : imageUrl;
+        
         setUserData({
           name: result.data.name || "",
           email: result.data.email || "",
           phone: result.data.phone || "",
-          profileImage: result.data.image || result.data.profileImage || "",
+          profileImage: fullImageUrl,
         });
       } else {
         toast.error(result.message || "Failed to load profile");
@@ -92,13 +97,14 @@ export default function PersonalInformationPage() {
             {/* Profile Image */}
             <div className="bg-white p-8 rounded-lg shadow-sm">
               <div className="relative">
-                <Avatar className="h-30 w-30">
+                <Avatar className="h-24 w-24">
                   <AvatarImage
                     src={userData.profileImage || "/placeholder.svg"}
                     alt={userData.name}
+                    className="object-cover"
                   />
-                  <AvatarFallback className="text-lg">
-                    {userData.name.charAt(0).toUpperCase()}
+                  <AvatarFallback className="text-2xl">
+                    {userData.name ? userData.name.charAt(0).toUpperCase() : "U"}
                   </AvatarFallback>
                 </Avatar>
               </div>
