@@ -1,19 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, User, Mail, Phone, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
+
+const baseUrl = "http://10.10.12.25:5008";
 
 export default function PersonalInformationPage() {
   const navigate = useNavigate();
-  // Mock user data - replace with actual user data from your state management
-  const [userData] = useState({
-    name: "Shoron",
-    email: "shoron@gmail.com",
-    phone: "+1 555 000 0000",
-    profileImage: "/placeholder.svg?height=80&width=80",
+  const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    profileImage: "",
   });
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${baseUrl}/api/v1/user/profile`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      const result = await response.json();
+      console.log("User profile response:", result);
+
+      if (response.ok && result.success && result.data) {
+        setUserData({
+          name: result.data.name || "",
+          email: result.data.email || "",
+          phone: result.data.phone || "",
+          profileImage: result.data.image || result.data.profileImage || "",
+        });
+      } else {
+        toast.error(result.message || "Failed to load profile");
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      toast.error("Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -42,6 +80,14 @@ export default function PersonalInformationPage() {
         </div>
 
         <div className="bg-white rounded-lg p-6 shadow-sm">
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                <p>Loading profile...</p>
+              </div>
+            </div>
+          ) : (
           <div className="flex gap-4 items-center space-y-6">
             {/* Profile Image */}
             <div className="bg-white p-8 rounded-lg shadow-sm">
@@ -106,8 +152,9 @@ export default function PersonalInformationPage() {
                   </Button>
                 </Link>
               </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -61,50 +61,47 @@ const Assign = () => {
     if (productId) {
       setIsModalOpen(true);
       setShowDropdown(false);
-      // Fetch already assigned customers for this product
-      fetchAssignedCustomers();
+      // Load assigned customers from localStorage
+      loadAssignedCustomers();
     }
   }, [productId]);
 
-  // Fetch assigned customers from API
-  const fetchAssignedCustomers = async () => {
+  // Load assigned customers from localStorage
+  const loadAssignedCustomers = () => {
     if (!productId) return;
     
-    setLoadingAssignments(true);
     try {
-      const response = await fetch(
-        `${baseUrl}/api/v1/assign-product/get-assigned-users/${productId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      const result = await response.json();
-      console.log("Assigned customers response:", result);
-
-      if (response.ok && result.success && result.data) {
-        // Map the assigned users to our format
-        const mappedCustomers = result.data.map((item: any) => ({
-          id: item.user._id,
-          _id: item.user._id,
-          name: item.user.name,
-          email: item.user.email,
-          phone: item.user.phone,
-          image: item.user.image,
-          purchases: 0,
-          address: "N/A",
-          productId: productId,
-        }));
-        setAssignedCustomers(mappedCustomers);
+      const storageKey = `assigned_customers_${productId}`;
+      const stored = localStorage.getItem(storageKey);
+      
+      if (stored) {
+        const customers = JSON.parse(stored);
+        console.log("Loaded from localStorage:", customers);
+        setAssignedCustomers(customers);
+      } else {
+        console.log("No stored customers found for this product");
+        setAssignedCustomers([]);
       }
     } catch (error) {
-      console.error("Error fetching assigned customers:", error);
-    } finally {
-      setLoadingAssignments(false);
+      console.error("Error loading assigned customers:", error);
+      setAssignedCustomers([]);
     }
   };
+
+  // Save assigned customers to localStorage whenever they change
+  useEffect(() => {
+    if (productId && assignedCustomers.length > 0) {
+      const storageKey = `assigned_customers_${productId}`;
+      localStorage.setItem(storageKey, JSON.stringify(assignedCustomers));
+      console.log("Saved to localStorage:", assignedCustomers);
+    }
+  }, [assignedCustomers, productId]);
+
+  // Debug: Log when assignedCustomers changes
+  useEffect(() => {
+    console.log("assignedCustomers state changed:", assignedCustomers);
+    console.log("Number of assigned customers:", assignedCustomers.length);
+  }, [assignedCustomers]);
 
   const handleUserSelect = (user: User) => {
     setSelectedUser(user);
@@ -118,9 +115,21 @@ const Assign = () => {
       return;
     }
 
+    console.log("Starting assignment...");
+    console.log("Product ID:", productId);
+    console.log("Selected User:", selectedUser);
+    console.log("User ID:", selectedUser._id);
+
     setAssigning(true);
 
     try {
+      const payload = {
+        productId: productId,
+        userId: selectedUser._id,
+      };
+      
+      console.log("Assignment payload:", payload);
+
       // API call to assign product
       const response = await fetch(`${baseUrl}/api/v1/assign-product/assign`, {
         method: "POST",
@@ -128,54 +137,60 @@ const Assign = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({
-          productId: productId,
-          userId: selectedUser._id,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
       console.log("API Response:", result);
+      console.log("Response status:", response.status);
       console.log("Response OK:", response.ok);
 
-      if (response.ok || result.success) {
-        // Check if user already in list
+      if (response.ok && result.success) {
+        // Add to assigned customers list
+        const newAssignment: AssignedCustomer = {
+          ...selectedUser,
+          id: selectedUser._id,
+          productId: productId,
+          purchases: 0,
+          address: "N/A",
+        };
+        
+        setAssignedCustomers((prev) => [...prev, newAssignment]);
+        toast.success(result.message || "Product assigned successfully!");
+        
+        setIsModalOpen(false);
+        setSelectedUser(null);
+        setUserSearch("");
+        setShowDropdown(false);
+      } else if (result.message === "Product already assigned") {
+        // Product already assigned - add to list if not there
         const alreadyInList = assignedCustomers.some(
           (customer) => customer._id === selectedUser._id
         );
-
+        
         if (!alreadyInList) {
-          // Add to assigned customers list
-          const newAssignment: AssignedCustomer = {
+          const existingAssignment: AssignedCustomer = {
             ...selectedUser,
             id: selectedUser._id,
             productId: productId,
             purchases: 0,
             address: "N/A",
           };
-
-          console.log("Adding new assignment:", newAssignment);
           
-          setAssignedCustomers((prev) => {
-            const updated = [...prev, newAssignment];
-            console.log("Updated assigned customers:", updated);
-            return updated;
-          });
+          setAssignedCustomers((prev) => [...prev, existingAssignment]);
+          toast.warning("This product was already assigned (added to list)");
+        } else {
+          toast.warning("This product is already assigned to this user");
         }
         
-        toast.success(result.message || "Product assigned successfully!");
         setIsModalOpen(false);
         setSelectedUser(null);
         setUserSearch("");
         setShowDropdown(false);
       } else {
         console.error("API Error:", result);
-        if (result.message === "Product already assigned") {
-          toast.error("This product is already assigned to this user");
-        } else {
-          toast.error(result.message || "Failed to assign product");
-        }
+        toast.error(result.message || "Failed to assign product");
       }
     } catch (error) {
       console.error("Assignment error:", error);
@@ -303,7 +318,7 @@ const Assign = () => {
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody key={assignedCustomers.length}>
               {assignedCustomers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-gray-500">
