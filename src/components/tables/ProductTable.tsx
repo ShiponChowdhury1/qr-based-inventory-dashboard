@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Checkbox } from "../ui/checkbox";
 import { Button } from "../ui/button";
 import { ArrowUpRight, Trash2, Loader2, Edit } from "lucide-react";
@@ -13,6 +14,7 @@ export function ProductTable({
   selectedCategory,
   onCategoryChange,
 }: ProductTableProps) {
+  const navigate = useNavigate();
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -370,6 +372,14 @@ export function ProductTable({
                           title="Delete product"
                         >
                           <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/assign?productId=${product.id}`)}
+                          className="bg-[#FFD700] text-[#003366] hover:bg-amber-400 rounded-full px-4"
+                          title="Assign product"
+                        >
+                          Add New Assign
                         </Button>
                       </div>
                     </td>

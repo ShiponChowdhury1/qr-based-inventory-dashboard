@@ -19,6 +19,7 @@ import { ChangePasswordPage } from "@/pages/ChangePasswordPage";
 import TermsConditionPage from "@/pages/TermsConditionPage";
 import EditTermsConditionPage from "@/pages/EditTermsConditionPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import Assign from "@/pages/Assign";
 
 const router = createBrowserRouter([
   {
@@ -35,12 +36,20 @@ const router = createBrowserRouter([
         element: <DashboardPage />,
       },
       {
+        path: "/products",
+        element: <ProductsPage />,
+      },
+      {
         path: "/categories",
         element: <CategoriesPage />,
       },
       {
         path: "/customers",
         element: <CustomersPage />,
+      },
+       {
+        path: "/assign",
+        element: <Assign />,
       },
       {
         path: "/settings",
@@ -82,10 +91,7 @@ const router = createBrowserRouter([
         path: "/settings/about-us/edit",
         element: <EditAboutUsPage />,
       },
-      {
-        path: "/products",
-        element: <ProductsPage />,
-      },
+      
     ],
   },
   {

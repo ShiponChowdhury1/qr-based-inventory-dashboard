@@ -106,3 +106,16 @@ export interface CategoryFormData {
   name: string;
   image: File | null;
 }
+
+export interface User {
+  _id: string;
+  id?: string;
+  name: string;
+  role: string;
+  email: string;
+  phone?: string;
+  verified: boolean;
+  image?: string;
+  createdAt: string;
+  updatedAt: string;
+}

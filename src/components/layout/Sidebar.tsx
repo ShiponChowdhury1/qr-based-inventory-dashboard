@@ -63,6 +63,11 @@ const generalNavItems: NavItem[] = [
     icon: Users,
     href: "customers",
   },
+  {
+    title: "Assign",
+    icon: Users,
+    href: "assign",
+  },
 ];
 
 const toolsNavItems: NavItem[] = [

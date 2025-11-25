@@ -201,6 +201,22 @@ export const baseApi = createApi({
     }),
 
 
+    ///----------------- User Related APIs -----------------///
+    //get all users API
+    getAllUsers: builder.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.append('page', params.page.toString());
+        if (params?.limit) searchParams.append('limit', params.limit.toString());
+        return {
+          url: `/user/get-all-users?${searchParams.toString()}`,
+          method: 'GET',
+        };
+      },
+      providesTags: ['inventory'],
+    }),
+
+
     ///----------------- Inventory Related APIs -----------------///
 
 
@@ -249,6 +265,7 @@ export const {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useGetAllOrdersQuery,
+  useGetAllUsersQuery,
 //   useGetSingleInventoryQuery,
 //   useUpdatedInventoryMutation,
 //   useDeleteInventoryMutation,
