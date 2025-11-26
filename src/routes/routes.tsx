@@ -15,6 +15,7 @@ import PersonalInformationPage from "@/pages/PersonalInformationPage";
 import EditPersonalInformationPage from "@/pages/EditPersonalInformationPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import DashboardPage from "@/pages/DashboardPage";
+import AdminRoute from "@/components/auth/AdminRoute";
 import { ChangePasswordPage } from "@/pages/ChangePasswordPage";
 import TermsConditionPage from "@/pages/TermsConditionPage";
 import EditTermsConditionPage from "@/pages/EditTermsConditionPage";
@@ -29,11 +30,19 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <DashboardPage />,
+        element: (
+          <AdminRoute>
+            <DashboardPage />
+          </AdminRoute>
+        ),
       },
       {
         path: "/dashboard",
-        element: <DashboardPage />,
+        element: (
+          <AdminRoute>
+            <DashboardPage />
+          </AdminRoute>
+        ),
       },
       {
         path: "/products",

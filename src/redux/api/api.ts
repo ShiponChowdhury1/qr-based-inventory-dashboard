@@ -7,7 +7,6 @@ export const baseApi = createApi({
     baseUrl: 'http://10.10.12.25:5008/api/v1',
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
-      console.log('Token from Redux:', token);
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
@@ -220,31 +219,6 @@ export const baseApi = createApi({
     ///----------------- Inventory Related APIs -----------------///
 
 
-    // getSingleInventory: builder.query({
-    //   query: (id) => ({
-    //     method: 'GET',
-    //     url: `/inventory/${id}`,
-    //   }),
-    // }),
-
-    // updatedInventory: builder.mutation({
-    //   query: (options) => {
-    //     return {
-    //       url: `/inventory/${options.id}`,
-    //       method: 'PUT',
-    //       body: options.data,
-    //     };
-    //   },
-    //   invalidatesTags: ['inventory']
-    // }),
-
-    // deleteInventory: builder.mutation({
-    //   query: (id) => ({
-    //     url: `/sport/${id}`,
-    //     method: 'DELETE',
-    //   }),
-    //   invalidatesTags: ['inventory']
-    // }),
   }),
 });
 
@@ -266,7 +240,4 @@ export const {
   useUpdateCategoryMutation,
   useGetAllOrdersQuery,
   useGetAllUsersQuery,
-//   useGetSingleInventoryQuery,
-//   useUpdatedInventoryMutation,
-//   useDeleteInventoryMutation,
 } = baseApi;
