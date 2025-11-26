@@ -67,8 +67,8 @@ export function ProductTable({
 
   const totalPages = productsData?.data?.meta?.totalPages || productsData?.data?.pagination?.totalPages || 1;
   
-  // Calculate categories from products if not provided by API
-  const categories = productsData?.data?.categories || products.reduce((acc: Record<string, number>, product: Product) => {
+  // Extract unique categories from products
+  const uniqueCategories = products.reduce((acc: Record<string, number>, product: Product) => {
     const categoryName = typeof product.category === 'object' && product.category !== null 
       ? product.category.name 
       : (product.category || 'Uncategorized');
@@ -76,11 +76,30 @@ export function ProductTable({
     return acc;
   }, {});
 
+  // Create category tabs dynamically from unique categories
+  const categoryTabs = [
+    {
+      key: "all",
+      label: "All",
+      count: products.length,
+    },
+    ...Object.keys(uniqueCategories).map(categoryName => ({
+      key: categoryName,
+      label: categoryName,
+      count: uniqueCategories[categoryName],
+    }))
+  ];
+
   const handleCategoryClick = (category: string) => {
     onCategoryChange(category);
     setCurrentPage(1);
     setSelectedProducts([]);
   };
+
+  // Refetch when category or page changes
+  useEffect(() => {
+    refetch();
+  }, [selectedCategory, currentPage, refetch]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -195,23 +214,6 @@ export function ProductTable({
       checkboxRef.current.indeterminate = isIndeterminate;
     }
   }, [isIndeterminate]);
-
-  // Category tabs data
-  const categoryTabs = [
-    {
-      key: "all",
-      label: "All",
-      count: Object.values(categories as Record<string, number>).reduce((sum, count) => sum + count, 0),
-    },
-    { key: "Hat", label: "Hat", count: categories["Hat"] || 0 },
-    { key: "Mug", label: "Mug", count: categories["Mug"] || 0 },
-    {
-      key: "mart Keychains",
-      label: "mart Keychains",
-      count: categories["mart Keychains"] || 0,
-    },
-    { key: "Bag", label: "Bag", count: categories["Bag"] || 0 },
-  ];
 
   return (
     <div className="space-y-6">

@@ -131,6 +131,29 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
         oneTimeCode: Number(otpString),
       }).unwrap();
 
+      console.log("=== OTP Verification Full Response ===");
+      console.log("Full response:", res);
+      console.log("res.data:", res?.data);
+      console.log("res.token:", res?.token);
+      console.log("res.data.token:", res?.data?.token);
+      console.log("res.data.data:", res?.data?.data);
+      console.log("res.data.data.token:", res?.data?.data?.token);
+
+      // Extract accessToken from response
+      const token = res?.data?.accessToken || 
+                    res?.accessToken || 
+                    res?.data?.token || 
+                    res?.token;
+      
+      console.log("Extracted token:", token);
+      
+      if (token) {
+        localStorage.setItem("resetToken", token);
+        console.log("✅ Reset token saved to localStorage:", token);
+      } else {
+        console.error("❌ No token found in response!");
+      }
+
       toast.success(res?.message || "OTP Verified Successfully", {
         description: "You can now reset your password.",
       });
@@ -138,7 +161,7 @@ const OTPVerificationPage: React.FC<OTPVerificationPageProps> = ({
       if (onVerificationSuccess) {
         onVerificationSuccess(emailFromState);
       } else {
-        navigate("/reset-password", { state: { email: emailFromState } });
+        navigate("/reset-password", { state: { email: emailFromState, token: token } });
       }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {

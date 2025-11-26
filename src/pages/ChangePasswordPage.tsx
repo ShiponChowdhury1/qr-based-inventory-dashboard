@@ -20,8 +20,11 @@ import { useChangePasswordMutation } from "@/redux/api/api";
 
 const changePasswordSchema = z
   .object({
-    oldPassword: z.string().min(1, "Old password is required"),
-    newPassword: z.string().min(6, "Password must be at least 8 characters"),
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(10, "Password must be at most 10 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -42,7 +45,7 @@ export function ChangePasswordPage() {
   const form = useForm<ChangePassword>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
-      oldPassword: "",
+      currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
@@ -51,8 +54,9 @@ export function ChangePasswordPage() {
   const onSubmit = async (data: ChangePassword) => {
     try {
       const res = await changePassword({
-        oldPassword: data.oldPassword,
+        currentPassword: data.currentPassword,
         newPassword: data.newPassword,
+        confirmPassword: data.confirmPassword,
       }).unwrap();
 
       toast.success(res?.message || "Your password has been successfully updated.", {
@@ -103,14 +107,14 @@ export function ChangePasswordPage() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Old Password */}
+              {/* Current Password */}
               <FormField
                 control={form.control}
-                name="oldPassword"
+                name="currentPassword"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-700 font-medium">
-                      Enter old password
+                      Enter current password
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
@@ -120,7 +124,7 @@ export function ChangePasswordPage() {
                         <Input
                           {...field}
                           type={showOldPassword ? "text" : "password"}
-                          placeholder="Enter old password"
+                          placeholder="Enter current password"
                           className="pl-10 pr-10 bg-gray-50 border-gray-200 rounded-full h-12"
                         />
                         <Button

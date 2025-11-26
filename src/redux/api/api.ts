@@ -1,15 +1,34 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL as string;
+
+// Public endpoints that don't need auth token
+const publicEndpoints = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/verify-email',
+  '/auth/reset-password',
+];
+
 export const baseApi = createApi({
   reducerPath: 'baseApi',
   baseQuery: fetchBaseQuery({ 
-   baseUrl: import.meta.env.VITE_API_BASE_URL as string,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.token;
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+    baseUrl: baseUrl,
+    prepareHeaders: (headers, { getState, endpoint }) => {
+      const url = (endpoint as any)?.url || '';
+      
+      // Skip auth header for public endpoints
+      const isPublicEndpoint = publicEndpoints.some(publicUrl => url.includes(publicUrl));
+      
+      if (!isPublicEndpoint) {
+        const token = (getState() as RootState).auth.token;
+        if (token) {
+          headers.set('Authorization', `Bearer ${token}`);
+        }
       }
+      
       return headers;
     },
   }),
@@ -64,11 +83,17 @@ export const baseApi = createApi({
     }), 
     //reset password API
     resetPassword: builder.mutation({
-      query: (userResetPassword) => ({
-        url: '/auth/reset-password',
-        method: 'PATCH',
-        body: userResetPassword,
-      }),
+      query: (userResetPassword) => {
+        const { token, ...bodyData } = userResetPassword;
+        return {
+          url: '/auth/reset-password',
+          method: 'POST',
+          body: bodyData,
+          headers: token ? {
+            'Authorization': `Bearer ${token}`
+          } : {},
+        };
+      },
       invalidatesTags: ['inventory'],
     }),  
 
@@ -92,7 +117,7 @@ export const baseApi = createApi({
         if (params?.page) searchParams.append('page', params.page.toString());
         if (params?.limit) searchParams.append('limit', params.limit.toString());
         return {
-          url: `/product/get-all-products?${searchParams.toString()}`,
+          url: `/product/get-all-products-admin?${searchParams.toString()}`,
           method: 'GET',
         };
       },

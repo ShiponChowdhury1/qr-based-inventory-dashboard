@@ -39,6 +39,7 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const emailFromState = location.state?.email || "";
+  const tokenFromState = location.state?.token || localStorage.getItem("resetToken");
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
   const form = useForm<ResetPasswordForm>({
@@ -53,14 +54,21 @@ export function ResetPasswordPage() {
       console.log("Sending reset password request:", {
         email: emailFromState,
         newPassword: data.newPassword,
+        confirmPassword: data.confirmPassword,
+        token: tokenFromState,
       });
       
       const res = await resetPassword({
         email: emailFromState,
         newPassword: data.newPassword,
+        confirmPassword: data.confirmPassword,
+        token: tokenFromState,
       }).unwrap();
       
       console.log("Reset password response:", res);
+      
+      // Clear the reset token after successful reset
+      localStorage.removeItem("resetToken");
       
       toast.success(res?.message || "Password Reset Successful", {
         description:
@@ -68,7 +76,7 @@ export function ResetPasswordPage() {
       });
 
       form.reset();
-      navigate("/");
+      navigate("/signin");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Reset password error:", error);
