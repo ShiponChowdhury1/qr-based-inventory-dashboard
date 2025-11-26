@@ -1,14 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { Link } from "react-router";
 import { useGetAdminNotificationsQuery } from "@/redux/api/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/redux/store";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Header: React.FC = () => {
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { data: notificationsData } = useGetAdminNotificationsQuery({});
   const { user } = useSelector((state: RootState) => state.auth);
   
@@ -36,43 +43,112 @@ const Header: React.FC = () => {
     }
   }
 
-  return (
-    <header
-      className={`h-20 border-b border-border bg-gray-50 px-6 flex justify-end items-center gap-6`}
-    >
-      {/* User Section */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="h-4 w-4" />
-          {notificationCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 hover:bg-red-500 text-white border-0">
-              {notificationCount > 99 ? '99+' : notificationCount}
-            </Badge>
-          )}
-        </Button>
+  // Get notifications array
+  const notifications = notificationsData?.data?.result || [];
 
-        <Link to="/settings/personal-information">
-          <div className="flex items-center gap-3 border-l-2 border-border pl-4">
-            <Avatar className="h-8 w-8">
-              <AvatarImage 
-                src={userImage} 
-                alt={user?.name || "User"}
-                className="object-cover"
-              />
-              <AvatarFallback>
-                {user?.name ? user.name.substring(0, 2).toUpperCase() : "AD"}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <span className="font-medium">{user?.name || "Admin"}</span>
-              <p className="text-sm text-muted-foreground capitalize">
-                {user?.role?.toLowerCase() || "admin"}
-              </p>
+  return (
+    <>
+      <header
+        className={`h-20 border-b border-border bg-gray-50 px-6 flex justify-end items-center gap-6`}
+      >
+        {/* User Section */}
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="relative"
+            onClick={() => setIsNotificationOpen(true)}
+          >
+            <Bell className="h-4 w-4" />
+            {notificationCount > 0 && (
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 hover:bg-red-500 text-white border-0">
+                {notificationCount > 99 ? '99+' : notificationCount}
+              </Badge>
+            )}
+          </Button>
+
+          <Link to="/settings/personal-information">
+            <div className="flex items-center gap-3 border-l-2 border-border pl-4">
+              <Avatar className="h-8 w-8">
+                <AvatarImage 
+                  src={userImage} 
+                  alt={user?.name || "User"}
+                  className="object-cover"
+                />
+                <AvatarFallback>
+                  {user?.name ? user.name.substring(0, 2).toUpperCase() : "AD"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <span className="font-medium">{user?.name || "Admin"}</span>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {user?.role?.toLowerCase() || "admin"}
+                </p>
+              </div>
             </div>
+          </Link>
+        </div>
+      </header>
+
+      {/* Notification Modal */}
+      <Dialog open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Notifications</span>
+              {notificationCount > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {notificationCount} unread
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-3 mt-4">
+            {notifications.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Bell className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map((notification: any, index: number) => (
+                <div
+                  key={notification._id || index}
+                  className={`p-4 rounded-lg border ${
+                    !notification.read 
+                      ? 'bg-blue-50 border-blue-200' 
+                      : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm mb-1">
+                        {notification.title || notification.message || "Notification"}
+                      </h4>
+                      {notification.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {notification.description}
+                        </p>
+                      )}
+                      {notification.createdAt && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                    {!notification.read && (
+                      <Badge className="bg-blue-500 hover:bg-blue-500 text-xs">
+                        New
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        </Link>
-      </div>
-    </header>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

@@ -15,12 +15,12 @@ import PersonalInformationPage from "@/pages/PersonalInformationPage";
 import EditPersonalInformationPage from "@/pages/EditPersonalInformationPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import DashboardPage from "@/pages/DashboardPage";
-import AdminRoute from "@/components/auth/AdminRoute";
 import { ChangePasswordPage } from "@/pages/ChangePasswordPage";
 import TermsConditionPage from "@/pages/TermsConditionPage";
 import EditTermsConditionPage from "@/pages/EditTermsConditionPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 import Assign from "@/pages/Assign";
+import PrivateRoute from "@/components/auth/PrivateRoute";
 
 const router = createBrowserRouter([
   {
@@ -31,74 +31,130 @@ const router = createBrowserRouter([
       {
         path: "/",
         element: (
-          <AdminRoute>
+          <PrivateRoute>
             <DashboardPage />
-          </AdminRoute>
+          </PrivateRoute>
         ),
       },
       {
         path: "/dashboard",
         element: (
-          <AdminRoute>
+          <PrivateRoute>
             <DashboardPage />
-          </AdminRoute>
+          </PrivateRoute>
         ),
       },
       {
         path: "/products",
-        element: <ProductsPage />,
+        element: (
+          <PrivateRoute>
+            <ProductsPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/categories",
-        element: <CategoriesPage />,
+        element: (
+          <PrivateRoute>
+            <CategoriesPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/customers",
-        element: <CustomersPage />,
+        element: (
+          <PrivateRoute>
+            <CustomersPage />
+          </PrivateRoute>
+        ),
       },
        {
         path: "/assign",
-        element: <Assign />,
+        element: (
+          <PrivateRoute>
+            <Assign />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings",
-        element: <SettingsPage />,
+        element: (
+          <PrivateRoute>
+            <SettingsPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings/personal-information",
-        element: <PersonalInformationPage />,
+        element: (
+          <PrivateRoute>
+            <PersonalInformationPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings/personal-information/edit",
-        element: <EditPersonalInformationPage />,
+        element: (
+          <PrivateRoute>
+            <EditPersonalInformationPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings/change-password",
-        element: <ChangePasswordPage />,
+        element: (
+          <PrivateRoute>
+            <ChangePasswordPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings/terms-condition",
-        element: <TermsConditionPage />,
+        element: (
+          <PrivateRoute>
+            <TermsConditionPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings/terms-condition/edit",
-        element: <EditTermsConditionPage />,
+        element: (
+          <PrivateRoute>
+            <EditTermsConditionPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings/privacy-policy",
-        element: <PrivacyPolicyPage />,
+        element: (
+          <PrivateRoute>
+            <PrivacyPolicyPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings/privacy-policy/edit",
-        element: <EditPrivacyPolicyPage />,
+        element: (
+          <PrivateRoute>
+            <EditPrivacyPolicyPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings/about-us",
-        element: <AboutUsPage />,
+        element: (
+          <PrivateRoute>
+            <AboutUsPage />
+          </PrivateRoute>
+        ),
       },
       {
         path: "/settings/about-us/edit",
-        element: <EditAboutUsPage />,
+        element: (
+          <PrivateRoute>
+            <EditAboutUsPage />
+          </PrivateRoute>
+        ),
       },
       
     ],
