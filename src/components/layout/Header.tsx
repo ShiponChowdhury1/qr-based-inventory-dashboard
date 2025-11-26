@@ -2,22 +2,32 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, X } from "lucide-react";
-import { Link } from "react-router";
+import { Bell, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useGetAdminNotificationsQuery } from "@/redux/api/api";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "@/redux/store";
+import { logout } from "@/redux/features/auth/authSlice";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const Header: React.FC = () => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { data: notificationsData } = useGetAdminNotificationsQuery({});
   const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   
   // Construct full image URL
   const baseUrl = "http://10.10.12.25:5008";
@@ -46,6 +56,12 @@ const Header: React.FC = () => {
   // Get notifications array
   const notifications = notificationsData?.data?.result || [];
 
+  const handleLogout = () => {
+    dispatch(logout());
+    toast.success("Logged out successfully");
+    navigate("/signin");
+  };
+
   return (
     <>
       <header
@@ -67,26 +83,34 @@ const Header: React.FC = () => {
             )}
           </Button>
 
-          <Link to="/settings/personal-information">
-            <div className="flex items-center gap-3 border-l-2 border-border pl-4">
-              <Avatar className="h-8 w-8">
-                <AvatarImage 
-                  src={userImage} 
-                  alt={user?.name || "User"}
-                  className="object-cover"
-                />
-                <AvatarFallback>
-                  {user?.name ? user.name.substring(0, 2).toUpperCase() : "AD"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <span className="font-medium">{user?.name || "Admin"}</span>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {user?.role?.toLowerCase() || "admin"}
-                </p>
-              </div>
-            </div>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-3 border-l-2 border-border pl-4 cursor-pointer hover:opacity-80 transition-opacity">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage 
+                    src={userImage} 
+                    alt={user?.name || "User"}
+                    className="object-cover"
+                  />
+                  <AvatarFallback>
+                    {user?.name ? user.name.substring(0, 2).toUpperCase() : "AD"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <span className="font-medium">{user?.name || "Admin"}</span>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {user?.role?.toLowerCase() || "admin"}
+                  </p>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
